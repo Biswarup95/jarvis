@@ -70,6 +70,8 @@ if __name__ == '__main__':
             webbrowser.open("google.com")
         elif 'open stack overflow' in query:
             webbrowser.open("stackoverflow.com")
+        elif 'open chatgpt' in query:
+        	webbrowser.open("https://chat.openai.com/")
         elif 'play music' in query:
             '''
             music_dir = 'path to music directory'
