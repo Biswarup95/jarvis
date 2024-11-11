@@ -5,13 +5,17 @@ import wikipedia
 import webbrowser
 import os
 import smtplib
-from PyQt5 import QtWidgets, QtGui, QtCore
-import sys
 
-# Initialize text-to-speech engine
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
+#print(voices[1].id)
 engine.setProperty('voices', voices[0].id)
+
+#import private key from environment variable
+from dotenv import load_dotenv
+import os
+load_dotenv()  # Loads environment variables from a .env file
+gmail_password = os.getenv("PASSWORD")
 
 def speak(audio):
     engine.say(audio)
@@ -19,104 +23,51 @@ def speak(audio):
 
 def wishMe():
     hour = int(datetime.datetime.now().hour)
-    if hour >= 0 and hour < 12:
+    if hour>=0 and hour<12:
         speak("Good Morning!")
-    elif hour >= 12 and hour < 18:
+    elif hour>=12 and hour<18:
         speak("Good Afternoon!")
     else:
-        speak("Good Evening!")
-    speak("I am JARVIS. How may I help you?")
+        speak("Good evening!")
+    speak("I am JARVIS. How may i help You")
+
+def takeCommand():
+    #microphone input
+
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening")
+        r.pause_threshold = 1
+        audio = r.listen(source)
+    try:
+        print("Recognizing...")
+        query = r.recognize_google(audio, language="en-in")
+        print(f"User said: {query}\n")
+    except Exception as e:
+        print(e)
+        print("Say that again Please..")
+        return "None"
+    return query
 
 def sendEmail(to, content):
-    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server = smtplib.SMTP('smtp.gmail.com',587)
     server.ehlo()
     server.starttls()
-    server.login('biswarupkhatua95@gmail.com', 'bgmailk95')
+    server.login('biswarupkhatua95@gmail.com', gmail_password)
     server.sendmail('biswarupkhatua95@gmail.com', to, content)
     server.close()
 
-class JarvisApp(QtWidgets.QMainWindow):
-    def __init__(self):
-        super(JarvisApp, self).__init__()
-        self.initUI()
-
-    def initUI(self):
-        self.setWindowTitle("JARVIS")
-        self.setGeometry(100, 100, 400, 400)
-        
-        # Set the window background color to white
-        self.setStyleSheet("background-color: white;")
-        
-        # Display microphone icon
-        self.label = QtWidgets.QLabel(self)
-        self.label.setGeometry(QtCore.QRect(150, 20, 100, 100))
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
-        self.updateListeningState(False)
-
-        # Display command options
-        self.optionsLabel = QtWidgets.QLabel("Available commands:", self)
-        self.optionsLabel.setGeometry(50, 140, 300, 30)
-        self.optionsLabel.setStyleSheet("color: black;")  # Set text color to black
-
-        # Set up QTextEdit to show the commands with white background and black text
-        self.commandsDisplay = QtWidgets.QTextEdit(self)
-        self.commandsDisplay.setGeometry(50, 180, 300, 150)
-        self.commandsDisplay.setReadOnly(True)
-        self.commandsDisplay.setStyleSheet("background-color: white; color: black;")
-        self.commandsDisplay.setText(
-            "Commands:\n"
-            "- Wikipedia\n"
-            "- Open YouTube\n"
-            "- Open Google\n"
-            "- Open Stack Overflow\n"
-            "- Open ChatGPT\n"
-            "- The time\n"
-            "- Send Email\n"
-            "- Quit"
-        )
-
-    def updateListeningState(self, listening):
-        if listening:
-            self.label.setPixmap(QtGui.QPixmap("microphone_icon.png").scaled(100, 100, QtCore.Qt.KeepAspectRatio))
-        else:
-            self.label.clear()
-
-    def takeCommand(self):
-        self.updateListeningState(True)
-        r = sr.Recognizer()
-        with sr.Microphone() as source:
-            print("Listening...")
-            r.pause_threshold = 1
-            audio = r.listen(source)
-        self.updateListeningState(False)
-
-        try:
-            print("Recognizing...")
-            query = r.recognize_google(audio, language="en-in")
-            print(f"User said: {query}\n")
-        except Exception as e:
-            print(e)
-            print("Say that again please...")
-            return "None"
-        return query
-
-
-
 if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
-    jarvisApp = JarvisApp()
-    jarvisApp.show()
     wishMe()
-
     while True:
-        query = jarvisApp.takeCommand().lower()
+        query = takeCommand().lower()
 
-        # Process the query
+        #task execution
         if 'wikipedia' in query:
-            speak("Searching Wikipedia...")
+            speak("Searching wikipedia..")
             query = query.replace("wikipedia", "")
             results = wikipedia.summary(query, sentences=2)
-            speak("According to Wikipedia")
+            speak("According to wikipedia")
             print(results)
             speak(results)
         elif 'open youtube' in query:
@@ -126,22 +77,36 @@ if __name__ == '__main__':
         elif 'open stack overflow' in query:
             webbrowser.open("stackoverflow.com")
         elif 'open chatgpt' in query:
-            webbrowser.open("https://chat.openai.com/")
+        	webbrowser.open("https://chat.openai.com/")
+        elif 'play music' in query:
+            '''
+            music_dir = 'path to music directory'
+            songs = os.listdir(music_dir)
+            print(songs)
+            os.startfile(os.path.join(music_dir, songs[0]))
+            '''
+            pass
         elif 'the time' in query:
             strTime = datetime.datetime.now().strftime("%H:%M:%S")
             print(strTime)
-            speak(f"Sir, the time is {strTime}")
+            speak(f"Sir, the time is{strTime}")
+        elif 'open IDE' in query:
+            '''
+            ide_path = 'path to exe file of ide'
+            os.startfile(ide_path)
+            '''
+            pass
         elif 'send email' in query:
+            #google less secure app access option removed
             try:
                 speak("What should I say?")
-                content = jarvisApp.takeCommand()
+                content = takeCommand()
                 to = "biswarupkhatua95@yahoo.com"
                 sendEmail(to, content)
                 speak("Email has been sent!")
             except Exception as e:
                 print(e)
-                speak("Sorry, I am not able to send the email.")
+                speak("Sorry biswa bro. I am not able to send the mail.")
         elif 'quit' in query:
             speak("Goodbye!")
-            jarvisApp.close()  # Close the main window
-            break  # Exit the loop and close the application
+            exit()
